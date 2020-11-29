@@ -18,40 +18,72 @@ def main(argv):
     isDebug=False
     currentPath=""
     def pullRepositories(repositories):
+        startAllRepositories=askYesOrNo("Would you like clone or pull all repositories")
         for repository in repositories:
-            message("Start pull repository : "+repository['name'], bcolors.OKCYAN, "subtitle")
-            if path.exists(repository['path']) == False:
-                os.makedirs(repository['path'], exist_ok=True)
-            debug("Git : "+repository['git'])
-            debug("Path : "+repository['path'])
-            if path.exists(repository['path']+"/.git"):
-                repo = git.Repo(repository['path'])
-                repo.git.checkout(repository['branch'])
-                o=repo.remotes.origin
-                o.pull
+
+            startRepository = False
+            if startAllRepositories == False:
+                startRepository = askYesOrNo(f"Would you like clone or pull {repository['name']} repository")
             else:
-                repo = git.Repo.clone_from(repository['git'], repository['path'])
-                repo.git.checkout(repository['branch'])
+                startRepository = True
+
+            if startRepository:
+                debug("Git : "+repository['git'])
+                debug("Path : "+repository['path'])
+                if path.exists(repository['path']) == False:
+                    os.makedirs(repository['path'], exist_ok=True)
+                if path.exists(repository['path']+"/.git"):
+                    message(f"-> GIT PULL repository : " + bcolors.BOLD + repository['name'] + bcolors.ENDC, bcolors.OKCYAN, "subtitle")
+                    repo = git.Repo(repository['path'])
+                    repo.git.checkout(repository['branch'])
+                    o=repo.remotes.origin
+                    o.pull
+                    print("\n")
+                else:
+                    message(f"-> GIT CLONE repository : " + bcolors.BOLD + repository['name'] + bcolors.ENDC, bcolors.OKCYAN, "subtitle")
+                    repo = git.Repo.clone_from(repository['git'], repository['path'])
+                    repo.git.checkout(repository['branch'])
+                    print("\n")
 
     def upRepositories(repositories):
+        startAllRepositories=askYesOrNo("Would you like up all repositories")
         for repository in repositories:
-            dockerComposeExecute('up', ["/usr/local/bin/docker-compose", "up", "-d"], repository)
+            dockerComposeExecute('up', ["/usr/local/bin/docker-compose", "up", "-d"], repository, startAllRepositories)
 
     def downRepositories(repositories):
+        startAllRepositories=askYesOrNo("Would you like down all repositories")
         for repository in repositories:
-            dockerComposeExecute('down', ["/usr/local/bin/docker-compose", "down"], repository)
+            dockerComposeExecute('down', ["/usr/local/bin/docker-compose", "down"], repository, startAllRepositories)
 
-    def dockerComposeExecute(type, cmd, repository):
-        message(type+"' to repository : "+repository['name'], bcolors.OKCYAN, "subtitle")
-        debug(repository['path'])
-        if path.exists(repository['path']) == False:
-            error("The repository not found -> before pull command")
-        os.chdir(repository['path'])
-        debug(os.getcwd())
-        process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-        subProcessOutput, subProcessError = process.communicate()
-        os.chdir(currentPath)
+    def dockerComposeExecute(type, cmd, repository, startAllRepositories):
+        startRepository=False
+        if startAllRepositories==False:
+            startRepository=askYesOrNo(f"Would you like {type.upper()} {repository['name']} repository")
+        else:
+            startRepository=True
+
+        if startRepository==True:
+            message(f"-> {type.upper()} repository : "+bcolors.BOLD+repository['name']+bcolors.ENDC, bcolors.OKCYAN, "subtitle")
+            debug(repository['path'])
+            if path.exists(repository['path']) == False:
+                error("The repository not found -> before pull command")
+            os.chdir(repository['path'])
+            debug(os.getcwd())
+            process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+            subProcessOutput, subProcessError = process.communicate()
+            os.chdir(currentPath)
+            print("\n")
+
+    def askYesOrNo(message):
+        response = input(message+' ? (y/yes/n/no)\n')
         print("\n")
+        if response.upper() in ['Y', 'YES']:
+            val = True
+        elif response.upper() in ['N', 'No']:
+            val = False
+        else:
+            error("Your choice is not defined : y/yes or n/no")
+        return val
 
     def help():
         message("Helper", bcolors.OKBLUE, "helper")
