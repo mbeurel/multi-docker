@@ -1,0 +1,6 @@
+.idea
+.git
+.env
+test/
+venv/
+docker-repositories.json

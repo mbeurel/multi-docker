@@ -1,0 +1,10 @@
+{
+  "repositories": [
+    {
+      "name":         "Name",
+      "path":         "path/to/repository",
+      "git":          "repo@dist",
+      "branch":       "master"
+    }
+  ]
+}

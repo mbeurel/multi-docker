@@ -1,0 +1,209 @@
+#!/usr/bin/python3
+
+import sys, getopt, json, git, os, subprocess
+from os import path
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+def main(argv):
+    isDebug=False
+    currentPath=""
+    def pullRepositories(repositories):
+        for repository in repositories:
+            message("Start pull repository : "+repository['name'], bcolors.OKCYAN, "subtitle")
+            if path.exists(repository['path']) == False:
+                os.makedirs(repository['path'], exist_ok=True)
+            debug("Git : "+repository['git'])
+            debug("Path : "+repository['path'])
+            if path.exists(repository['path']+"/.git"):
+                repo = git.Repo(repository['path'])
+                repo.git.checkout(repository['branch'])
+                o=repo.remotes.origin
+                o.pull
+            else:
+                repo = git.Repo.clone_from(repository['git'], repository['path'])
+                repo.git.checkout(repository['branch'])
+
+    def upRepositories(repositories):
+        for repository in repositories:
+            dockerComposeExecute('up', ["/usr/local/bin/docker-compose", "up", "-d"], repository)
+
+    def downRepositories(repositories):
+        for repository in repositories:
+            dockerComposeExecute('down', ["/usr/local/bin/docker-compose", "down"], repository)
+
+    def dockerComposeExecute(type, cmd, repository):
+        message(type+"' to repository : "+repository['name'], bcolors.OKCYAN, "subtitle")
+        debug(repository['path'])
+        if path.exists(repository['path']) == False:
+            error("The repository not found -> before pull command")
+        os.chdir(repository['path'])
+        debug(os.getcwd())
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+        subProcessOutput, subProcessError = process.communicate()
+        os.chdir(currentPath)
+        print("\n")
+
+    def help():
+        message("Helper", bcolors.OKBLUE, "helper")
+        print(" -h,  --help           view this helper")
+        print(" -d,  --debug          Debug script")
+        print("      --config-file    Path to config file, default=docker-config.yml")
+        print("      --pull           Clone or pull repositories in the config file")
+        print("      --up             Up docker compose repositories in the config file")
+        print("      --down           Down docker compose repositories in the config file")
+        print("\n\n")
+
+    def message(message, type, withStyle=""):
+
+        if withStyle == "header":
+            messageFinal=styleMessage(message, "-", "-", "|", 20)
+        elif withStyle == "title":
+            messageFinal=styleMessage(message, "", "-", "", 0)
+        elif withStyle == "helper":
+            messageFinal=styleMessage(message, "", "-", "", 3)
+        elif withStyle == "error":
+            messageFinal=styleMessage(message, "_", "⎻", "/!\\", 10)
+        elif withStyle == "debug":
+            messageFinal=styleMessage(f"DEBUG : {message}", "#", "", "", 0)
+        else:
+            messageFinal=message
+
+        typeEnd=""
+        if type:
+            typeEnd = f"{bcolors.ENDC}"
+
+        print(f"{type}{messageFinal}{typeEnd}")
+        if withStyle == "helper":
+            print("\n")
+
+    def styleMessage(message, charTop, charBottom, charConteneur, nbSpace):
+        if not charConteneur:
+            charConteneur=""
+        spaceToLeftAndRight = " "*nbSpace
+        messageCenter = f"{charConteneur}{spaceToLeftAndRight}{message}{spaceToLeftAndRight}{charConteneur}"
+        nbCaractere = len(messageCenter)
+        messageSpace = " " * (nbCaractere - (len(charConteneur)*2))
+        messageFinal = charTop * nbCaractere
+        messageFinal += "\n"
+        if charConteneur != "":
+            messageFinal += f"{charConteneur}{messageSpace}{charConteneur}"
+            messageFinal += "\n"
+        messageFinal += messageCenter
+        messageFinal += "\n"
+        if charConteneur != "":
+            messageFinal += f"{charConteneur}{messageSpace}{charConteneur}"
+            messageFinal += "\n"
+        messageFinal += charBottom * nbCaractere
+        return messageFinal
+
+    def error(error):
+        message(error, bcolors.FAIL, "error")
+        sys.exit()
+
+    def debug(element):
+        if isDebug:
+            message(element, bcolors.WARNING, "debug")
+
+    def getRepositoriesConfig(pathConfig):
+        global config
+        if path.exists(pathConfig) == 0:
+            error(pathConfig+" not exist !")
+
+        if path.isfile(pathConfig) == 0:
+            error(pathConfig+" not file !")
+        try:
+            f=open(pathConfig, "r")
+            config = json.load(f)
+            f.close()
+        except True:
+            error("File is not json")
+
+        if "repositories" not in config:
+            error("Repositories is not defined to file "+pathConfig+" !")
+        return config["repositories"]
+
+    def checkConfigRepository(repositories):
+        i = 0
+        errors=[]
+        for repository in repositories:
+            if "name" not in repository:
+                errors[i]['name']="Key 'name' is not defined to "+str(i)+" repository"
+            if "path" not in repository:
+                errors[i]['path']="Key 'path' is not defined to "+str(i)+" repository"
+            if "git" not in repository:
+                errors[i]['git']="Key 'git' is not defined to "+str(i)+" repository"
+            if "branch" not in repository:
+                errors[i]['branch']="Key 'branch' is not defined to "+str(i)+" repository"
+            i+=1
+        if len(errors) > 0:
+            error(errors)
+
+    currentPath = os.getcwd()
+    pathConfig="docker-repositories.json"
+    argv.remove("./multidocker")
+    actionPull=False
+    actionUp=False
+    actionDown=False
+    try:
+        opts, args = getopt.getopt(argv, "h:d", ["help", "config-file=", "pull", "up", "down", "debug"])
+    except getopt.GetoptError:
+        help()
+        sys.exit(2)
+
+    message("Docker Multi", bcolors.HEADER, "header")
+    for opt, arg in opts:
+        if opt in ("-h", "--help"):
+            help()
+            sys.exit()
+        elif opt in ("-d", "--debug"):
+            isDebug=True
+        elif opt in ("--config-file="):
+            pathConfig=arg
+        elif opt in ("--pull"):
+            actionPull=True
+        elif opt in ("--up"):
+            if(actionDown) :
+                error("You chose Up and Down option, --up or --down choice please !")
+            actionUp=True
+        elif opt in ("--down"):
+            if(actionUp) :
+                error("You chose Up and Down option, --up or --down choice please !")
+            actionDown=True
+
+
+    if actionPull == False and actionUp == False and actionDown == False:
+        error("Please select one choice : --pull or --up or --down !")
+
+    repositories = getRepositoriesConfig(pathConfig)
+    checkConfigRepository(repositories)
+
+    if actionPull == True:
+        try:
+            message("Start to retreive repositories", bcolors.OKBLUE, "title")
+            pullRepositories(repositories)
+        except:
+            print("Git pull - Unexpected error:", sys.exc_info()[0])
+            sys.exit()
+
+    if actionUp == True:
+        message("Start to up docker", bcolors.OKBLUE, "title")
+        upRepositories(repositories)
+
+    if actionDown == True:
+        message("Start to down docker", bcolors.OKBLUE, "title")
+        downRepositories(repositories)
+
+    message("Success", bcolors.OKGREEN, "header")
+
+main = main(sys.argv)
+
