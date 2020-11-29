@@ -6,11 +6,14 @@ Multi docker is script to clone or pull git repository and up or down docker-com
 
 The script dependencie is [GitPython](https://gitpython.readthedocs.io/en/stable/) to clone or pull automatic git repository.
 
-**Install Git Python**
+**Install**
 ```bash
+chmod +x setup && ./setup
+## or
 sudo apt-get install python3-pip
 pip3 install gitpython
 chmod +x multidocker
+sudo multidocker /usr/local/bin
 ```
 
 **copy config**
@@ -20,29 +23,34 @@ cp  docker-repositories.dist.json  docker-repositories.json
 
 ## Command
 
+**Execute script**
+```bash
+multidocker #or ./multidocker
+```
+
 **Clone or pull git repository**
 ```bash
-./multidocker --pull
+multidocker --pull
 ```
 
 **Docker Compose Up**
 ```bash
-./multidocker --up
+multidocker --up
 ```
 
 **Docker Compose Down**
 ```bash
-./multidocker --down
+multidocker --down
 ```
 
 **Select other config file**
 ```bash
-./multidocker --config-file=path/to/your/file.json
+multidocker --config-file=path/to/your/file.json
 ```
 
 **Helper**
 ```bash
-./multidocker -h
+multidocker -h
  -h,  --help                 view this helper
  -d,  --debug                Debug script
       --config-file=         Path to config file, default=docker-config.yml
