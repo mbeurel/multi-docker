@@ -182,7 +182,7 @@ def main(argv):
 
     currentPath = os.getcwd()
     pathConfig="docker-repositories.json"
-    argv.remove("./multidocker")
+    del argv[0]
     actionPull=False
     actionUp=False
     actionDown=False
