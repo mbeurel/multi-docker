@@ -37,7 +37,7 @@ def main(argv):
                     repo = git.Repo(repository['path'])
                     repo.git.checkout(repository['branch'])
                     o=repo.remotes.origin
-                    o.pull
+                    o.pull()
                     print("\n")
                 else:
                     message(f"-> GIT CLONE repository : " + bcolors.BOLD + repository['name'] + bcolors.ENDC, bcolors.OKCYAN, "subtitle")
@@ -200,7 +200,10 @@ def main(argv):
         elif opt in ("-d", "--debug"):
             isDebug=True
         elif opt in ("--config-file="):
-            pathConfig=arg
+            pathConfig=os.path.abspath(arg)
+            currentPath = os.path.dirname(pathConfig)
+            os.chdir(currentPath)
+            debug("Path : " + currentPath)
         elif opt in ("--pull"):
             actionPull=True
         elif opt in ("--up"):
@@ -211,6 +214,7 @@ def main(argv):
             if(actionUp) :
                 error("You chose Up and Down option, --up or --down choice please !")
             actionDown=True
+
 
 
     if actionPull == False and actionUp == False and actionDown == False:
