@@ -7,14 +7,19 @@ Multi docker is script to clone or pull git repository and up or down docker-com
 The script dependencie is [GitPython](https://gitpython.readthedocs.io/en/stable/) to clone or pull automatic git repository.
 
 **Install**
+
+_Ubuntu Or Debian_
 ```bash
 chmod +x setup && ./setup
 ## or
 sudo apt-get install python3-pip
 pip3 install gitpython
 chmod +x multidocker
-sudo multidocker /usr/local/bin
+sudo cp multidocker /usr/local/bin
 ```
+_Mac_
+
+[Install Python 3](https://docs.python-guide.org/starting/install3/osx/)
 
 **copy config**
 ```
