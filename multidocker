@@ -20,30 +20,32 @@ def main(argv):
     def pullRepositories(repositories):
         startAllRepositories=askYesOrNo("Would you like clone or pull all repositories")
         for repository in repositories:
-
-            startRepository = False
-            if startAllRepositories == False:
-                startRepository = askYesOrNo(f"Would you like clone or pull {repository['name']} repository")
-            else:
-                startRepository = True
-
-            if startRepository:
-                debug("Git : "+repository['git'])
-                debug("Path : "+repository['path'])
-                if path.exists(repository['path']) == False:
-                    os.makedirs(repository['path'], exist_ok=True)
-                if path.exists(repository['path']+"/.git"):
-                    message(f"-> GIT PULL repository : " + bcolors.BOLD + repository['name'] + bcolors.ENDC, bcolors.OKCYAN, "subtitle")
-                    repo = git.Repo(repository['path'])
-                    repo.git.checkout(repository['branch'])
-                    o=repo.remotes.origin
-                    o.pull()
-                    print("\n")
+            try:
+                startRepository = False
+                if startAllRepositories == False:
+                    startRepository = askYesOrNo(f"Would you like clone or pull {repository['name']} repository")
                 else:
-                    message(f"-> GIT CLONE repository : " + bcolors.BOLD + repository['name'] + bcolors.ENDC, bcolors.OKCYAN, "subtitle")
-                    repo = git.Repo.clone_from(repository['git'], repository['path'])
-                    repo.git.checkout(repository['branch'])
-                    print("\n")
+                    startRepository = True
+
+                if startRepository:
+                    debug("Git : "+repository['git'])
+                    debug("Path : "+repository['path'])
+                    if path.exists(repository['path']) == False:
+                        os.makedirs(repository['path'], exist_ok=True)
+                    if path.exists(repository['path']+"/.git"):
+                        message(f"-> GIT PULL repository : " + bcolors.BOLD + repository['name'] + bcolors.ENDC, bcolors.OKCYAN, "subtitle")
+                        repo = git.Repo(repository['path'])
+                        repo.git.checkout(repository['branch'])
+                        o=repo.remotes.origin
+                        o.pull()
+                        print("\n")
+                    else:
+                        message(f"-> GIT CLONE repository : " + bcolors.BOLD + repository['name'] + bcolors.ENDC, bcolors.OKCYAN, "subtitle")
+                        repo = git.Repo.clone_from(repository['git'], repository['path'])
+                        repo.git.checkout(repository['branch'])
+                        print("\n")
+            except git.exc.GitCommandError:
+                error("Unable to checkout version '"+repository['branch']+"' of git repo '"+repository['git']+"', please ensure that the version exists in the repo.", False)
 
     def upRepositories(repositories):
         startAllRepositories=askYesOrNo("Would you like up all repositories")
@@ -138,9 +140,10 @@ def main(argv):
         messageFinal += charBottom * nbCaractere
         return messageFinal
 
-    def error(error):
+    def error(error, exit = True):
         message(error, bcolors.FAIL, "error")
-        sys.exit()
+        if exit == True:
+            sys.exit()
 
     def debug(element):
         if isDebug:
@@ -224,12 +227,9 @@ def main(argv):
     checkConfigRepository(repositories)
 
     if actionPull == True:
-        try:
-            message("Start to retreive repositories", bcolors.OKBLUE, "title")
-            pullRepositories(repositories)
-        except:
-            print("Git pull - Unexpected error:", sys.exc_info()[0])
-            sys.exit()
+        message("Start to retreive repositories", bcolors.OKBLUE, "title")
+        pullRepositories(repositories)
+
 
     if actionUp == True:
         message("Start to up docker", bcolors.OKBLUE, "title")
