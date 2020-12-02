@@ -90,14 +90,16 @@ def main(argv):
             print("\n")
 
     def askYesOrNo(message):
-        response = input(message+' ? (y/yes/n/no)\n')
+        response = input(message+' - y/n ?  default:n\n')
         print("\n")
         if response.upper() in ['Y', 'YES']:
             val = True
         elif response.upper() in ['N', 'No']:
             val = False
-        else:
+        elif response:
             error("Your choice is not defined : y/yes or n/no")
+        else:
+            val = False
         return val
 
     def help():
