@@ -1,10 +1,11 @@
 {
   "repositories": [
     {
-      "name":         "Name",
-      "path":         "path/to/repository",
-      "git":          "repo@dist",
-      "branch":       "master"
+      "name":               "Name",
+      "path":               "path/to/repository",
+      "git":                "repo@dist",
+      "branch":             "master",
+      "docker-compose":     "docker-compose.yml -> This is a default value, this params is not required"
     }
   ]
 }

@@ -50,14 +50,14 @@ def main(argv):
     def upRepositories(repositories):
         startAllRepositories=askYesOrNo("Would you like up all repositories")
         for repository in repositories:
-            dockerComposeExecute('up', ["/usr/local/bin/docker-compose", "up", "-d"], repository, startAllRepositories)
+            dockerComposeExecute('up', repository, startAllRepositories)
 
     def downRepositories(repositories):
         startAllRepositories=askYesOrNo("Would you like down all repositories")
         for repository in repositories:
-            dockerComposeExecute('down', ["/usr/local/bin/docker-compose", "down"], repository, startAllRepositories)
+            dockerComposeExecute('down', repository, startAllRepositories)
 
-    def dockerComposeExecute(type, cmd, repository, startAllRepositories):
+    def dockerComposeExecute(type, repository, startAllRepositories):
         startRepository=False
         if startAllRepositories==False:
             startRepository=askYesOrNo(f"Would you like {type.upper()} {repository['name']} repository")
@@ -65,11 +65,24 @@ def main(argv):
             startRepository=True
 
         if startRepository==True:
-            message(f"-> {type.upper()} repository : "+bcolors.BOLD+repository['name']+bcolors.ENDC, bcolors.OKCYAN, "subtitle")
+            message(f"-> {type.upper()} repository : " + bcolors.BOLD + repository['name'] + bcolors.ENDC,
+                    bcolors.OKCYAN, "subtitle")
             debug(repository['path'])
             if path.exists(repository['path']) == False:
                 error("The repository not found -> before pull command")
             os.chdir(repository['path'])
+
+            if type == "up":
+                cmd = ["/usr/local/bin/docker-compose", "up", "-d"]
+            else:
+                cmd = ["/usr/local/bin/docker-compose", "down"]
+            if "docker-compose" in repository:
+                if path.exists(repository['docker-compose']):
+                    debug(repository['docker-compose'])
+                    if type == "up":
+                        cmd = ["/usr/local/bin/docker-compose", "-f", repository['docker-compose'], "up", "-d"]
+                    else:
+                        cmd = ["/usr/local/bin/docker-compose", "-f", repository['docker-compose'], "down"]
             debug(os.getcwd())
             process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
             subProcessOutput, subProcessError = process.communicate()
