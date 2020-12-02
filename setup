@@ -15,7 +15,7 @@ class bcolors:
 
 def main(argv):
     print(f"- {bcolors.OKBLUE}Install python3-pip{bcolors.ENDC}")
-    process = subprocess.Popen(['sudo', "apt-get", "install", "-y", "--fix-missing" "python3-pip"], stdout=subprocess.PIPE)
+    process = subprocess.Popen(['sudo', "apt-get", "install", "-y", "--fix-missing", "python3-pip"], stdout=subprocess.PIPE)
     subProcessOutput, subProcessError = process.communicate()
 
     print(f"- {bcolors.OKBLUE}Install gitPython{bcolors.ENDC}")
